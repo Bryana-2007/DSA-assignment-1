@@ -1,0 +1,133 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_SIZE 100000
+
+typedef struct Node {
+    int data;
+    struct Node* next;
+} Node;
+
+typedef struct {
+    Node* head;
+    Node* tail;
+    Node* indexTable[MAX_SIZE];  // auxiliary structure
+    int size;
+} SinglyLinkedList;
+
+/* Initialize list */
+void initList(SinglyLinkedList* list) {
+    list->head = NULL;
+    list->tail = NULL;
+    list->size = 0;
+}
+
+/* Insert at a given position */
+void insert(SinglyLinkedList* list, int position, int value) {
+    if (position < 0 || position > list->size) {
+        printf("Invalid position\n");
+        return;
+    }
+
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    newNode->data = value;
+
+    if (list->size == 0) {
+        newNode->next = NULL;
+        list->head = list->tail = newNode;
+    }
+    else if (position == 0) {
+        newNode->next = list->head;
+        list->head = newNode;
+    }
+    else if (position == list->size) {
+        list->tail->next = newNode;
+        newNode->next = NULL;
+        list->tail = newNode;
+    }
+    else {
+        Node* prev = list->indexTable[position - 1];
+        newNode->next = prev->next;
+        prev->next = newNode;
+    }
+
+    // Shift index table (O(n))
+    for (int i = list->size; i > position; i--) {
+        list->indexTable[i] = list->indexTable[i - 1];
+    }
+
+    list->indexTable[position] = newNode;
+    list->size++;
+}
+
+/* Remove from a given position */
+void removal(SinglyLinkedList* list, int position) {
+    if (position < 0 || position >= list->size) {
+        printf("Invalid position\n");
+        return;
+    }
+
+    Node* toDelete;
+
+    if (position == 0) {
+        toDelete = list->head;
+        list->head = list->head->next;
+        if (list->size == 1)
+            list->tail = NULL;
+    }
+    else {
+        Node* prev = list->indexTable[position - 1];
+        toDelete = prev->next;
+        prev->next = toDelete->next;
+        if (toDelete == list->tail)
+            list->tail = prev;
+    }
+
+    free(toDelete);
+
+    // Shift index table (O(n))
+    for (int i = position; i < list->size - 1; i++) {
+        list->indexTable[i] = list->indexTable[i + 1];
+    }
+
+    list->size--;
+}
+
+/* O(1) get(i) */
+int get(SinglyLinkedList* list, int index) {
+    if (index < 0 || index >= list->size) {
+        printf("Invalid index\n");
+        return -1;
+    }
+    return list->indexTable[index]->data;
+}
+
+/* Display list */
+void display(SinglyLinkedList* list) {
+    Node* curr = list->head;
+    while (curr != NULL) {
+        printf("%d -> ", curr->data);
+        curr = curr->next;
+    }
+    printf("NULL\n");
+}
+
+/* Main for manual testing */
+int main() {
+    SinglyLinkedList list;
+    initList(&list);
+
+    insert(&list, 0, 10);
+    insert(&list, 1, 20);
+    insert(&list, 2, 30);
+    insert(&list, 1, 15);
+
+    display(&list);
+
+    printf("Element at index 2: %d\n", get(&list, 2));
+
+    removal(&list, 1);
+    display(&list);
+
+    return 0;
+}
